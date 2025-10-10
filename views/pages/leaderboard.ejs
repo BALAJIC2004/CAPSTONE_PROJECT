@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Community Leaderboard - Jal Rakshakti</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .rank-1 {
+            background: linear-gradient(45deg, #FFD700, #FFEC8B) !important;
+        }
+
+        .rank-2 {
+            background: linear-gradient(45deg, #C0C0C0, #E8E8E8) !important;
+        }
+
+        .rank-3 {
+            background: linear-gradient(45deg, #CD7F32, #E8B88A) !important;
+        }
+
+        .badge-icon {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-droplet"></i> Jal Shakti - NRW Monitoring
+                <span class="badge bg-success live-badge">LIVE</span>
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link" herf="/dma-zones">DMA Zones</a>
+                <a class="nav-link" href="/leaks">Leak Reports</a>
+                <span class="nav-link text-info">
+                    <%= user.name %>
+                </span>
+                <a class="nav-link" href="/leaderboard"><i class="bi bi-trophy"></i> Leaderboard </a> 
+                 <a class="nav-link" href="/graph"><i class="bi bi-graph-up"></i> Analytics</a> 
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h1>🏆 Community Leaderboard</h1>
+                <p class="lead">Top Water Guardians Saving Our Precious Resource</p>
+            </div>
+        </div>
+
+        <!-- Top 3 Winners -->
+        <div class="row mb-5">
+            <% const top3=leaderboard.slice(0, 3); %>
+                <% if (top3.length> 0) { %>
+                    <div class="col-md-4 text-center">
+                        <% if (top3[1]) { %>
+                            <div class="card rank-2 mb-3">
+                                <div class="card-body">
+                                    <h2>🥈</h2>
+                                    <h4>#<%= top3[1].rank %>
+                                    </h4>
+                                    <h5>
+                                        <%= top3[1].name %>
+                                    </h5>
+                                    <h3 class="text-primary">
+                                        <%= top3[1].points %> pts
+                                    </h3>
+                                    <p>
+                                        <%= top3[1].leaks_reported %> leaks reported
+                                    </p>
+                                </div>
+                            </div>
+                            <% } %>
+                    </div>
+
+                    <div class="col-md-4 text-center">
+                        <% if (top3[0]) { %>
+                            <div class="card rank-1 mb-3">
+                                <div class="card-body">
+                                    <h2>🥇</h2>
+                                    <h4>#<%= top3[0].rank %>
+                                    </h4>
+                                    <h5>
+                                        <%= top3[0].name %>
+                                    </h5>
+                                    <h3 class="text-warning">
+                                        <%= top3[0].points %> pts
+                                    </h3>
+                                    <p>
+                                        <%= top3[0].leaks_reported %> leaks reported
+                                    </p>
+                                </div>
+                            </div>
+                            <% } %>
+                    </div>
+
+                    <div class="col-md-4 text-center">
+                        <% if (top3[2]) { %>
+                            <div class="card rank-3 mb-3">
+                                <div class="card-body">
+                                    <h2>🥉</h2>
+                                    <h4>#<%= top3[2].rank %>
+                                    </h4>
+                                    <h5>
+                                        <%= top3[2].name %>
+                                    </h5>
+                                    <h3 class="text-success">
+                                        <%= top3[2].points %> pts
+                                    </h3>
+                                    <p>
+                                        <%= top3[2].leaks_reported %> leaks reported
+                                    </p>
+                                </div>
+                            </div>
+                            <% } %>
+                    </div>
+                    <% } %>
+        </div>
+
+        <!-- Full Leaderboard -->
+        <div class="card">
+            <div class="card-header">
+                <h4>Community Rankings</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>User</th>
+                                <th>Points</th>
+                                <th>Leaks Reported</th>
+                                <th>Verified</th>
+                                <th>Badges</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% leaderboard.forEach(user=> { %>
+                                <tr class="<%= user.username === sessionUser.username ? 'table-info' : '' %>">
+                                    <td>
+                                        <strong>#<%= user.rank %></strong>
+                                        <% if (user.rank <=3) { %>
+                                            <span class="badge bg-warning">Top 3</span>
+                                            <% } %>
+                                    </td>
+                                    <td>
+                                        <strong>
+                                            <%= user.name %>
+                                        </strong>
+                                        <% if (user.username===sessionUser.username) { %>
+                                            <span class="badge bg-primary">You</span>
+                                            <% } %>
+                                    </td>
+                                    <td><span class="badge bg-success">
+                                            <%= user.points %> pts
+                                        </span></td>
+                                    <td>
+                                        <%= user.leaks_reported %>
+                                    </td>
+                                    <td>
+                                        <%= user.leaks_verified %>
+                                    </td>
+                                    <td>
+                                        <% if (user.badges && user.badges.length> 0) { %>
+                                            <% user.badges.forEach(badge=> { %>
+                                                <span class="badge bg-secondary me-1">
+                                                    <i class="bi bi-award"></i>
+                                                    <%= badge.replace(/_/g, ' ' ) %>
+                                                </span>
+                                                <% }); %>
+                                                    <% } else { %>
+                                                        <span class="text-muted">No badges yet</span>
+                                                        <% } %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- How it Works -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>🎯 How Points Work</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Earn Points:</h6>
+                        <ul>
+                            <li>✅ Report a leak: <strong>+10 points</strong></li>
+                            <li>✅ Your leak gets verified: <strong>+5 points</strong></li>
+                            <li>✅ Your leak gets fixed: <strong>+5 points</strong></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Earn Badges:</h6>
+                        <ul>
+                            <li>🟡 First Report - Report your first leak</li>
+                            <li>🔵 Reporter Novice - Report 5 leaks</li>
+                            <li>🟢 Water Guardian - Report 20 leaks</li>
+                            <li>🟣 Water Hero - Reach 100 points</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

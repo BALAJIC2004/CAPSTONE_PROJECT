@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard - Jal Rakshakti</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .live-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .alert-item {
+            border-left: 4px solid #0d6efd;
+            padding-left: 10px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .alert-warning-item {
+            border-left-color: #ffc107;
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .alert-danger-item {
+            border-left-color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        .alert-success-item {
+            border-left-color: #198754;
+            background: rgba(25, 135, 84, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-droplet"></i> Jal Shakti - NRW Monitoring
+                <span class="badge bg-success live-badge">LIVE</span>
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link active" href="/dashboard">Dashboard</a>
+
+                <!-- Show DMA Zones only for DMA Staff -->
+                <% if (user.role==='dma_staff' ) { %>
+                    <a class="nav-link" href="/dma-zones">DMA Zones</a>
+                    <% } %>
+
+                        <!-- Show Leaks for all authenticated users -->
+                        <a class="nav-link" href="/leaks">
+                            <% if (user.role==='public_user' ) { %>
+                                Report Leak
+                                <% } else { %>
+                                    Leak Reports
+                                    <% } %>
+                        </a>
+
+                        <!-- User info and logout -->
+                        <span
+                            class="nav-link text-<%= user.role === 'dma_staff' ? 'warning' : user.role === 'field_team' ? 'success' : 'info' %>">
+                            <%= user.name %> (<%= user.role==='dma_staff' ? 'Staff' : user.role==='field_team'
+                                    ? 'Field Tech' : 'User' %>)
+                        </span>
+
+                          <a class="nav-link" href="/leaderboard"><i class="bi bi-trophy"></i> Leaderboard </a>
+                         <a class="nav-link" href="/graph"><i class="bi bi-graph-up"></i> Analytics</a> 
+                        <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>NRW Monitoring Dashboard</h2>
+            <small class="text-muted">Last updated: <span id="lastUpdate">
+                    <%= new Date().toLocaleString() %>
+                </span></small>
+        </div>
+
+        <!-- System Alerts -->
+        <% if (systemAlerts.length> 0) { %>
+            <div class="alert alert-info mt-3">
+                <h6><i class="bi bi-bell-fill"></i> Recent System Activity</h6>
+                <div class="mt-2">
+                    <% systemAlerts.forEach(alert=> { %>
+                        <div
+                            class="alert-item <%= alert.type === 'leak_detected' ? 'alert-danger-item' : 'alert-warning-item' %>">
+                            <small>
+                                <strong>
+                                    <%= alert.type==='leak_detected' ? '🚨 LEAK DETECTED' : '✅ LEAK FIXED' %>
+                                </strong><br>
+                                <%= alert.message %> <br>
+                                    <em class="text-muted">
+                                        <%= alert.timestamp %>
+                                    </em>
+                            </small>
+                        </div>
+                        <% }); %>
+                </div>
+            </div>
+            <% } %>
+
+                <!-- Key Metrics -->
+                <div class="row mt-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-body text-center">
+                                <h5>Average NRW %</h5>
+                                <h1 id="nrwValue">
+                                    <%= totalNRW %>%
+                                </h1>
+                                <small>Industry Target: < 20%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card text-white bg-danger">
+                            <div class="card-body text-center">
+                                <h5>Active Leaks</h5>
+                                <h1 id="leaksValue">
+                                    <%= activeLeaks %>
+                                </h1>
+                                <small>Requiring attention</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-body text-center">
+                                <h5>DMA Zones</h5>
+                                <h1>
+                                    <%= dmaZones.length %>
+                                </h1>
+                                <small>Being monitored</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-body text-center">
+                                <h5>Water Saved</h5>
+                                <h1>
+                                    <%= (waterSaved / 1000).toFixed(0) %>K L
+                                </h1>
+                                <small>Monthly potential</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DMA Zones Table -->
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4>DMA Zones Status</h4>
+                        <small class="text-muted">Data updates every 30 seconds</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Zone ID</th>
+                                        <th>Name</th>
+                                        <th>Location</th>
+                                        <th>Connections</th>
+                                        <th>NRW %</th>
+                                        <th>Status</th>
+                                        <th>Last Update</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% dmaZones.forEach(zone=> { %>
+                                        <tr>
+                                            <td><strong>
+                                                    <%= zone.zone_id %>
+                                                </strong></td>
+                                            <td>
+                                                <%= zone.name %>
+                                            </td>
+                                            <td>
+                                                <%= zone.location %>
+                                            </td>
+                                            <td>
+                                                <%= zone.connections %>
+                                            </td>
+                                            <td>
+                                                <span
+                                                    class="badge bg-<%= zone.nrw > 40 ? 'danger' : zone.nrw > 20 ? 'warning' : 'success' %>">
+                                                    <%= zone.nrw %>%
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (zone.nrw> 40) { %>
+                                                    <span class="badge bg-danger">Critical</span>
+                                                    <% } else if (zone.nrw> 20) { %>
+                                                        <span class="badge bg-warning">Warning</span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-success">Good</span>
+                                                            <% } %>
+                                            </td>
+                                            <td><small class="text-muted">
+                                                    <%= zone.updatedAt ? new Date(zone.updatedAt).toLocaleTimeString()
+                                                        : 'Just now' %>
+                                                </small></td>
+                                        </tr>
+                                        <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <!-- <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="d-grid gap-2">
+                    <a href="/dma-zones" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-circle"></i> Manage DMA Zones
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="d-grid gap-2">
+                    <a href="/leaks" class="btn btn-warning btn-lg">
+                        <i class="bi bi-exclamation-triangle"></i> View Leak Reports
+                    </a>
+                </div>
+            </div>
+        </div> -->
+
+                <!-- Auto-refresh notification -->
+                <div class="alert alert-light text-center mt-4">
+                    <small class="text-muted">
+                        <i class="bi bi-arrow-clockwise"></i>
+                        This dashboard automatically updates every 30 seconds with simulated real-time data
+                    </small>
+                </div>
+    </div>
+
+    <!-- Simple auto-refresh script -->
+    <script>
+        // Auto-refresh page every 60 seconds to see updated data
+       setTimeout(() => {
+        window.location.reload();
+    }, 30000);
+        // Update 'Last updated' time every minute
+        setInterval(() => {
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString();
+        }, 60000);
+    </script>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

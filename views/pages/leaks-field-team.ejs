@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Field Updates - Jal Rakshakti</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .media-preview {
+            max-width: 100px;
+            max-height: 80px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .media-modal-img {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+
+        .media-modal-video {
+            width: 100%;
+            max-height: 80vh;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-droplet"></i> Jal Shakti - NRW Monitoring
+                <span class="badge bg-success live-badge">LIVE</span>
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link active" href="/leaks">Field Updates</a>
+                <span class="nav-link text-success">Field Tech: <%= user.name %></span>
+                  <a class="nav-link" href="/leaderboard"><i class="bi bi-trophy"></i> Leaderboard </a>
+                 <a class="nav-link" href="/graph"><i class="bi bi-graph-up"></i> Analytics</a> 
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Field Leak Management</h2>
+        <p class="text-muted">As Field Technician, you can update leak status and add field notes. View user-submitted
+            evidence to assess damage.</p>
+
+        <!-- Field Team Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h6>Assigned to Me</h6>
+                        <h3>
+                            <%= leaks.filter(l=> l.assigned_to === user.name).length %>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body text-center">
+                        <h6>Investigating</h6>
+                        <h3>
+                            <%= leaks.filter(l=> l.status === 'investigating').length %>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h6>Fixed</h6>
+                        <h3>
+                            <%= leaks.filter(l=> l.status === 'fixed').length %>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body text-center">
+                        <h6>With Evidence</h6>
+                        <h3>
+                            <%= leaks.filter(l=> l.media_file).length %>
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaks Table with Field Update Forms -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Leak Reports - Field Updates</h5>
+            </div>
+            <div class="card-body">
+                <% if (leaks.length> 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <!--  <th>ID</th> -->
+                                    <th>Zone</th>
+                                    <th>Location</th>
+                                    <th>Severity</th>
+                                    <th>Evidence</th>
+                                    <th>Status</th>
+                                    <th>Reported By</th>
+                                    <th>Description</th>
+                                    <th>Field Notes</th>
+                                    <th>Update Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% leaks.forEach(leak=> { %>
+                                    <tr>
+                                        <!--  <td>#<%= leak.id %></td> -->
+                                        <td><strong>
+                                                <%= leak.zone_id %>
+                                            </strong></td>
+                                        <td>
+                                            <strong>
+                                                <%= leak.location %>
+                                            </strong>
+                                            <% if (leak.coordinates && leak.coordinates.latitude) { %>
+                                                <br>
+                                                <div class="mt-1">
+                                                    <a href="https://maps.google.com/?q=<%= leak.coordinates.latitude %>,<%= leak.coordinates.longitude %>"
+                                                        target="_blank" class="btn btn-success btn-sm">
+                                                        <i class="bi bi-map"></i> Open in Maps
+                                                    </a>
+                                                    <a href="https://www.google.com/maps/dir/?api=1&destination=<%= leak.coordinates.latitude %>,<%= leak.coordinates.longitude %>"
+                                                        target="_blank" class="btn btn-primary btn-sm mt-1">
+                                                        <i class="bi bi-signpost"></i> Get Directions
+                                                    </a>
+                                                </div>
+                                                <small class="text-muted">
+                                                    <%= leak.coordinates.latitude.toFixed(6) %>, <%=
+                                                            leak.coordinates.longitude.toFixed(6) %>
+                                                </small>
+                                                <% } else { %>
+                                                    <br><small class="text-warning">No coordinates</small>
+                                                    <% } %>
+                                        </td>
+
+                                        <td>
+                                            <span
+                                                class="badge bg-<%= leak.severity === 'high' ? 'danger' : leak.severity === 'medium' ? 'warning' : 'info' %>">
+                                                <%= leak.severity %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <% if (leak.media_file) { %>
+                                                <div class="text-center">
+                                                    <% if (leak.media_type==='video' ) { %>
+                                                        <video class="media-preview"
+                                                            onclick="openMediaModal('<%= leak.media_file %>', 'video')">
+                                                            <source src="<%= leak.media_file %>" type="video/mp4">
+                                                            <div class="text-center">
+                                                                <i class="bi bi-play-circle-fill"
+                                                                    style="font-size: 2rem;"></i>
+                                                                <br>
+                                                                <small>Click to view video</small>
+                                                            </div>
+                                                        </video>
+                                                        <% } else { %>
+                                                            <img src="<%= leak.media_file %>" alt="Leak evidence"
+                                                                class="media-preview"
+                                                                onclick="openMediaModal('<%= leak.media_file %>', 'image')">
+                                                            <% } %>
+                                                                <br>
+                                                                <small class="text-success">
+                                                                    <i class="bi bi-check-circle"></i> Evidence
+                                                                </small>
+                                                </div>
+                                                <% } else { %>
+                                                    <span class="text-muted">No media</span>
+                                                    <% } %>
+                                        </td>
+                                        <td>
+                                            <span
+                                                class="badge bg-<%= leak.status === 'fixed' ? 'success' : leak.status === 'investigating' ? 'info' : 'warning' %>">
+                                                <%= leak.status %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <%= leak.reported_by || 'Public' %>
+                                                    <% if (leak.createdAt) { %>
+                                                        <br><span class="text-muted">
+                                                            <%= new Date(leak.createdAt).toLocaleDateString() %>
+                                                        </span>
+                                                        <% } %>
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <small>
+                                                <%= leak.description %>
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <% if (leak.field_notes) { %>
+                                                <small>"<%= leak.field_notes %>"</small>
+                                                <% if (leak.updatedAt) { %>
+                                                    <br><small class="text-muted">
+                                                        <%= new Date(leak.updatedAt).toLocaleString() %>
+                                                    </small>
+                                                    <% } %>
+                                                        <% } else { %>
+                                                            <span class="text-muted">No field notes</span>
+                                                            <% } %>
+                                        </td>
+                                        <td>
+                                            <form method="POST" action="/leaks/field-update/<%= leak._id %>">
+                                                <select name="status" class="form-select form-select-sm mb-2">
+                                                    <option value="reported" <%=leak.status==='reported' ? 'selected'
+                                                        : '' %>>Reported</option>
+                                                    <option value="investigating" <%=leak.status==='investigating'
+                                                        ? 'selected' : '' %>>Investigating</option>
+                                                    <option value="fixed" <%=leak.status==='fixed' ? 'selected' : '' %>
+                                                        >Fixed</option>
+                                                </select>
+                                                <textarea name="field_notes" class="form-control form-control-sm"
+                                                    placeholder="Add field notes, site observations..."
+                                                    rows="2"><%= leak.field_notes || '' %></textarea>
+                                                <button type="submit" class="btn btn-success btn-sm w-100 mt-1">
+                                                    <i class="bi bi-check-circle"></i> Update
+                                                </button>
+                                            </form>
+                                        </td>
+                                        <td>
+                                            <% if (leak.assigned_to===user.name) { %>
+                                                <span class="badge bg-primary">Assigned to Me</span>
+                                                <% } else if (!leak.assigned_to) { %>
+                                                    <form method="POST" action="/leaks/assign/<%= leak._id %>"
+                                                        class="d-inline">
+                                                        <button type="submit"
+                                                            class="btn btn-outline-primary btn-sm">Assign to Me</button>
+                                                    </form>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary">Assigned to <%=
+                                                                leak.assigned_to %></span>
+                                                        <% } %>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <% } else { %>
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                            <p class="mt-2">No leak reports found.</p>
+                        </div>
+                        <% } %>
+            </div>
+        </div>
+
+        <!-- Instructions for Field Team -->
+        <div class="alert alert-info mt-4">
+            <h6><i class="bi bi-info-circle"></i> Field Team Instructions</h6>
+            <ul class="mb-0">
+                <li>View uploaded image/video to assess leak severity before site visit</li>
+                <li>Assign leaks to yourself to take responsibility</li>
+                <li>Update status based on your field assessment</li>
+                <li>Add detailed field notes for other team members</li>
+                <li>Use visual evidence to prioritize high-damage leaks</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Media Modal -->
+    <div class="modal fade" id="mediaModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Leak Evidence</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="mediaContent">
+                        <!-- Media will be inserted here by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#" id="downloadMedia" class="btn btn-primary" download>
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openMediaModal(mediaUrl, mediaType) {
+            const mediaContent = document.getElementById('mediaContent');
+            const downloadLink = document.getElementById('downloadMedia');
+
+            mediaContent.innerHTML = '';
+            downloadLink.href = mediaUrl;
+
+            if (mediaType === 'video') {
+                mediaContent.innerHTML = `
+                    <video class="media-modal-video" controls autoplay>
+                        <source src="${mediaUrl}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <p class="mt-2 text-muted">Video evidence of water leak</p>
+                `;
+            } else {
+                mediaContent.innerHTML = `
+                    <img src="${mediaUrl}" alt="Leak evidence" class="media-modal-img">
+                    <p class="mt-2 text-muted">Photo evidence of water leak</p>
+                `;
+            }
+
+            const mediaModal = new bootstrap.Modal(document.getElementById('mediaModal'));
+            mediaModal.show();
+        }
+
+        // Auto-refresh page every 2 minutes to see new leaks
+        setTimeout(() => {
+            window.location.reload();
+        }, 120000);
+
+
+
+        // Check for JavaScript errors
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            console.log('Error: ' + msg + '\nURL: ' + url + '\nLine: ' + lineNo);
+            return false;
+        };
+
+    </script>
+</body>
+
+</html>

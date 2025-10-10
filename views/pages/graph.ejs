@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Water Leak Analytics - Jal Rakshak</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .card {
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="bi bi-droplet"></i> Jal Shakti
+            </a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+                <a class="nav-link active" href="/dma-zones">DMA Zones</a>
+                <a class="nav-link" href="/leaks">Leak Reports</a>
+                <a class="nav-link" href="/leaderboard">Leaderboard</a>
+                <a class="nav-link active" href="/graph">Analytics</a>
+                <span class="nav-link text-info"><%= user.name %></span>
+                <a class="nav-link" href="/logout">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h1>📊 Water Leak Analytics</h1>
+                <p class="lead">Real Data from Your DMA Zones</p>
+            </div>
+        </div>
+
+        <!-- Data Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body text-center">
+                        <h5>Total Leaks Reported</h5>
+                        <h2><%= totalLeaks || 0 %></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body text-center">
+                        <h5>Active DMA Zones</h5>
+                        <h2><%= dmaZonesCount || 0 %></h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-warning text-white">
+                    <div class="card-body text-center">
+                        <h5>Active Users</h5>
+                        <h2><%= activeUsers || 0 %></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph 1: DMA Zone Leak Distribution -->
+        <div class="row mb-5">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h4 class="mb-0">📍 Leak Distribution by DMA Zone</h4>
+                        <p class="text-muted mb-0">Real leak counts from each DMA zone in your system</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="dmaLeakChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph 2: Monthly Leak Reports -->
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h4 class="mb-0">📅 Monthly Leak Reports Trend</h4>
+                        <p class="text-muted mb-0">User leak reports per month across all DMA zones</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="monthlyRequestsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+      <script>
+        // Get real data from backend with safe fallbacks
+        const dmaLabels = <%- JSON.stringify((dmaLeakData && dmaLeakData.labels) || []) %>;
+        const dmaCounts = <%- JSON.stringify((dmaLeakData && dmaLeakData.counts) || []) %>;
+        const monthlyLabels = <%- JSON.stringify((monthlyData && monthlyData.months) || []) %>;
+        const monthlyCounts = <%- JSON.stringify((monthlyData && monthlyData.counts) || []) %>;
+
+        console.log('DMA Data:', dmaLabels, dmaCounts);
+        console.log('Monthly Data:', monthlyLabels, monthlyCounts);
+
+        // Wait for page to load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Graph 1: DMA Zone Leak Distribution
+            if (document.getElementById('dmaLeakChart')) {
+                const dmaCtx = document.getElementById('dmaLeakChart').getContext('2d');
+                
+                // Check if we have data
+                if (dmaLabels.length > 0 && dmaCounts.length > 0) {
+                    new Chart(dmaCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: dmaLabels,
+                            datasets: [{
+                                label: 'Number of Leaks',
+                                data: dmaCounts,
+                                backgroundColor: '#0d6efd',
+                                borderColor: '#0a58ca',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Leaks: ${context.parsed.y}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Leaks',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'DMA Zones',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Show message if no data
+                    dmaCtx.font = '16px Arial';
+                    dmaCtx.fillStyle = '#666';
+                    dmaCtx.textAlign = 'center';
+                    dmaCtx.fillText('No leak data available yet', 300, 200);
+                }
+            }
+
+            // Graph 2: Monthly Leak Reports
+            if (document.getElementById('monthlyRequestsChart')) {
+                const monthlyCtx = document.getElementById('monthlyRequestsChart').getContext('2d');
+                
+                // Check if we have data
+                if (monthlyLabels.length > 0 && monthlyCounts.length > 0) {
+                    new Chart(monthlyCtx, {
+                        type: 'line',
+                        data: {
+                            labels: monthlyLabels,
+                            datasets: [{
+                                label: 'Leak Reports',
+                                data: monthlyCounts,
+                                borderColor: '#198754',
+                                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                borderWidth: 3,
+                                pointBackgroundColor: '#198754',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `Reports: ${context.parsed.y}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Reports',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Months',
+                                        font: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Show message if no data
+                    monthlyCtx.font = '16px Arial';
+                    monthlyCtx.fillStyle = '#666';
+                    monthlyCtx.textAlign = 'center';
+                    monthlyCtx.fillText('No monthly data available yet', 300, 200);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
