@@ -1,0 +1,27 @@
+# Dependencies
+/node_modules
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables and Secrets
+.env
+/config/database.js  # If it contains credentials not using .env
+/config/db.json
+*.pem
+
+# IDEs and other ignored files
+.vscode
+.DS_Store
+
+
+#Users password
+ADMIN_PASSWORD=admin2004
+FIELD_PASSWORD=tech2004
+USER_PASSWORD=user2004
+
+
+
+
